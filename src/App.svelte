@@ -263,7 +263,7 @@
 <nav class="navbar is-primary" aria-label="main navigation">
   <div class="navbar-brand">
     <a class="navbar-item is-size-4 has-text-weight-bold" href="/">
-      <img src="favicon.png" alt="OBS-web" class="rotate" /></a>
+      <img src="favicon.png" alt="OBS-web"/></a>
 
     <!-- svelte-ignore a11y-missing-attribute -->
     <button class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navmenu">
@@ -383,9 +383,6 @@
       <h1 class="subtitle">
         Welcome to
         <strong>OBS-web</strong>
-        - the easiest way to control
-        <a href="https://obsproject.com/" target="_blank">OBS</a>
-        remotely!
       </h1>
 
       {#if document.location.protocol === 'https:'}
@@ -406,23 +403,32 @@
         </div>
       {/if}
 
-      <p>To get started, enter your OBS host:port below and click "connect".</p>
-
       <form on:submit|preventDefault={connect}>
-        <div class="field is-grouped">
-          <p class="control is-expanded">
+        <div class="field">
+          <label class="label">Host:Port</label>
+          <div class="control">
               <input id="host" bind:value={address} class="input" type="text" autocomplete="" placeholder="ws://localhost:4455" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Password</label>
+          <div class="control">
               <input id="password" bind:value={password} class="input" type="password" autocomplete="current-password" placeholder="password (leave empty if you have disabled authentication)" />
-          </p>
-          <p class="control">
+          </div>
+        </div>
+        <div class="block"></div>
+        <div class="field">
+          <div class="control">
             <button class="button is-success">Connect</button>
-          </p>
+          </div>
         </div>
       </form>
+      <div class="block"></div>
       <p class="help">
         Make sure that you use <a href="https://github.com/obsproject/obs-studio/releases">OBS v28+</a> or install the
         <a href="https://github.com/obsproject/obs-websocket/releases/tag/{OBS_WEBSOCKET_LATEST_VERSION}" target="_blank">obs-websocket {OBS_WEBSOCKET_LATEST_VERSION} plugin</a>
-        for v27. If you use an older version of OBS, see the <a href="/v4/">archived OBS-web v4</a> page.
+        for v27.
+        <br>If you use an older version of OBS, see the <a href="/v4/">archived OBS-web v4</a> page.
       </p>
     {/if}
   </div>

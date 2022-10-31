@@ -2,6 +2,24 @@
 
 $footer-padding: 3rem 1.5rem;
 
+$grey-darker:   hsl(215, 13%, 15%);
+$grey-dark:     hsl(215, 13%, 20%);
+$grey:          hsl(215, 13%, 25%);
+$grey-light:    hsl(215, 13%, 70%);
+$grey-lighter:  hsl(215, 13%, 85%);
+$grey-lightest:	hsl(215, 13%, 95%);
+$link:          hsl(215, 50%, 50%);
+$green:         hsl(141, 53%, 53%);
+
+$primary: $grey-darker;
+$text: $grey-lightest;
+$text-strong: $grey-lighter;
+$input-background-color: $grey-lightest;
+$input-color: $grey-darker;
+
+$scheme-main: $grey-dark;
+$scheme-main-bis: $grey;
+
 @import "~bulma/bulma.sass";
 
 @keyframes rotating {
