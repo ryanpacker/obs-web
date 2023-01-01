@@ -30,19 +30,20 @@
 <style>
   button {
     border: none;
-    height: 4rem;
+    height: 3rem;
     text-align: center;
     width: 100%;
     cursor: pointer;
-    background: #3e8ed0 no-repeat center center / cover;
+    background: #3298dc no-repeat center center / cover;
     color: #fff;
     border-radius: 5px;
+    font-size: 1em;
   }
   button.preview {
     background-color: #00d1b2;
   }
   button.program {
-    background-color: #f14668;
+    background-color: #48c774;
   }
   button:not(.title) {
     padding: 0;
