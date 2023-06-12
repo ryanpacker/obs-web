@@ -543,8 +543,9 @@
       {/if}
 
       <form on:submit|preventDefault={connect}>
-        <div class="field is-grouped">
-          <p class="control is-expanded">
+        <div class="field">
+          <div class="control is-expanded">
+            <div class="label add-space-above">Host:Port</div>
             <input
               id="host"
               bind:value={address}
@@ -553,6 +554,7 @@
               autocomplete=""
               placeholder="ws://localhost:4455"
             />
+            <div class="label add-space-above">Password</div>
             <input
               id="password"
               bind:value={password}
@@ -561,9 +563,10 @@
               autocomplete="current-password"
               placeholder="password (leave empty if you have disabled authentication)"
             />
-          </p>
+          </div>
+          <div class="add-space-above"></div>
           <p class="control">
-            <button class="button is-success">Connect</button>
+            <button class="button is-success add-space-above">Connect</button>
           </p>
         </div>
       </form>
