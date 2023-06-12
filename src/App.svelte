@@ -564,7 +564,7 @@
           </p>
           <p class="control">
             <button class="button is-success">Connect</button>
-          </div>
+          </p>
         </div>
       </form>
       <div class="block"></div>
