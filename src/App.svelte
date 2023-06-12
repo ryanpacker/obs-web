@@ -5,14 +5,25 @@
   // Imports
   import { onMount } from 'svelte'
   import {
-    mdiSquareRoundedBadge, mdiSquareRoundedBadgeOutline,
-    mdiImageEdit, mdiImageEditOutline,
-    mdiFullscreen, mdiFullscreenExit,
-    mdiBorderVertical, mdiArrowSplitHorizontal,
-    mdiAccessPoint, mdiAccessPointOff,
-    mdiRecord, mdiStop, mdiPause, mdiPlayPause,
-    mdiConnection, mdiCameraOff, mdiCamera,
-    mdiMotionPlayOutline, mdiMotionPlay
+    mdiSquareRoundedBadge,
+    mdiSquareRoundedBadgeOutline,
+    mdiImageEdit,
+    mdiImageEditOutline,
+    mdiFullscreen,
+    mdiFullscreenExit,
+    mdiBorderVertical,
+    mdiArrowSplitHorizontal,
+    mdiAccessPoint,
+    mdiAccessPointOff,
+    mdiRecord,
+    mdiStop,
+    mdiPause,
+    mdiPlayPause,
+    mdiConnection,
+    mdiCameraOff,
+    mdiCamera,
+    mdiMotionPlayOutline,
+    mdiMotionPlay
   } from '@mdi/js'
   import Icon from 'mdi-svelte'
   import { compareVersions } from 'compare-versions'
@@ -40,14 +51,16 @@
             await navigator.wakeLock.request('screen')
           }
         })
-      } catch (e) { }
+      } catch (e) {}
     }
 
     // Toggle the navigation hamburger menu on mobile
     const navbar = document.querySelector('.navbar-burger')
     navbar.addEventListener('click', () => {
       navbar.classList.toggle('is-active')
-      document.getElementById(navbar.dataset.target).classList.toggle('is-active')
+      document
+        .getElementById(navbar.dataset.target)
+        .classList.toggle('is-active')
     })
 
     // Listen for fullscreen changes
@@ -66,6 +79,12 @@
     if (document.location.hash !== '') {
       // Read address from hash
       address = document.location.hash.slice(1)
+
+      // This allows you to add a password in the URL like this:
+      // http://obs-web.niek.tv/#ws://localhost:4455#password
+      if (address.includes('#')) {
+        [address, password] = address.split('#')
+      }
       await connect()
     }
 
@@ -101,7 +120,7 @@
     secs -= hours * 3600
     const mins = Math.floor(secs / 60)
     secs -= mins * 60
-    return (hours > 0)
+    return hours > 0
       ? `${hours}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`
       : `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`
   }
@@ -127,7 +146,9 @@
   }
 
   async function toggleStudioMode () {
-    await sendCommand('SetStudioModeEnabled', { studioModeEnabled: !isStudioMode })
+    await sendCommand('SetStudioModeEnabled', {
+      studioModeEnabled: !isStudioMode
+    })
   }
 
   async function toggleReplay () {
@@ -135,7 +156,9 @@
     console.debug('ToggleReplayBuffer', data.outputActive)
     if (data.outputActive === undefined) {
       replayError = 'Replay buffer is not enabled.'
-      setTimeout(function () { replayError = '' }, 5000)
+      setTimeout(function () {
+        replayError = ''
+      }, 5000)
     } else isReplaying = data.outputActive
   }
 
@@ -184,8 +207,13 @@
     console.log('Connecting to:', address, '- using password:', password)
     await disconnect()
     try {
-      const { obsWebSocketVersion, negotiatedRpcVersion } = await obs.connect(address, password)
-      console.log(`Connected to obs-websocket version ${obsWebSocketVersion} (using RPC ${negotiatedRpcVersion})`)
+      const { obsWebSocketVersion, negotiatedRpcVersion } = await obs.connect(
+        address,
+        password
+      )
+      console.log(
+        `Connected to obs-websocket version ${obsWebSocketVersion} (using RPC ${negotiatedRpcVersion})`
+      )
     } catch (e) {
       console.log(e)
       errorMessage = e.message
@@ -202,7 +230,11 @@
   // OBS events
   obs.on('ConnectionClosed', () => {
     connected = false
-    window.history.pushState('', document.title, window.location.pathname + window.location.search) // Remove the hash
+    window.history.pushState(
+      '',
+      document.title,
+      window.location.pathname + window.location.search
+    ) // Remove the hash
     console.log('Connection closed')
   })
 
@@ -213,10 +245,20 @@
     const data = await sendCommand('GetVersion')
     const version = data.obsWebSocketVersion || ''
     console.log('OBS-websocket version:', version)
-    if (compareVersions(version, OBS_WEBSOCKET_LATEST_VERSION) > 0) {
-      alert('You are running an outdated OBS-websocket (version ' + version + '), please upgrade to the latest version for full compatibility.')
+    if (compareVersions(version, OBS_WEBSOCKET_LATEST_VERSION) < 0) {
+      alert(
+        'You are running an outdated OBS-websocket (version ' +
+          version +
+          '), please upgrade to the latest version for full compatibility.'
+      )
     }
-    if (data.supportedImageFormats.includes('webp') && document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0) {
+    if (
+      data.supportedImageFormats.includes('webp') &&
+      document
+        .createElement('canvas')
+        .toDataURL('image/webp')
+        .indexOf('data:image/webp') === 0
+    ) {
       imageFormat = 'webp'
     }
     heartbeatInterval = setInterval(async () => {
@@ -226,8 +268,10 @@
       heartbeat = { stats, streaming, recording }
       // console.log(heartbeat);
     }, 1000) // Heartbeat
-    isStudioMode = (await sendCommand('GetStudioModeEnabled')).studioModeEnabled || false
-    isVirtualCamActive = (await sendCommand('GetVirtualCamStatus')).outputActive || false
+    isStudioMode =
+      (await sendCommand('GetStudioModeEnabled')).studioModeEnabled || false
+    isVirtualCamActive =
+      (await sendCommand('GetVirtualCamStatus')).outputActive || false
   })
 
   obs.on('ConnectionError', async () => {
@@ -266,7 +310,12 @@
       <img src="favicon.png" alt="OBS-web"/></a>
 
     <!-- svelte-ignore a11y-missing-attribute -->
-    <button class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navmenu">
+    <button
+      class="navbar-burger burger"
+      aria-label="menu"
+      aria-expanded="false"
+      data-target="navmenu"
+    >
       <span aria-hidden="true" />
       <span aria-hidden="true" />
       <span aria-hidden="true" />
@@ -281,79 +330,156 @@
           {#if connected}
             <button class="button is-info is-light" disabled>
               {#if heartbeat && heartbeat.stats}
-                {Math.round(heartbeat.stats.activeFps)} fps, {Math.round(heartbeat.stats.cpuUsage)}% CPU, {heartbeat.stats.renderSkippedFrames} skipped frames
+                {Math.round(heartbeat.stats.activeFps)} fps, {Math.round(
+                  heartbeat.stats.cpuUsage
+                )}% CPU, {heartbeat.stats.renderSkippedFrames} skipped frames
               {:else}Connected{/if}
             </button>
             {#if heartbeat && heartbeat.streaming && heartbeat.streaming.outputActive}
-              <button class="button is-danger" on:click={stopStream} title="Stop Stream">
+              <button
+                class="button is-danger"
+                on:click={stopStream}
+                title="Stop Stream"
+              >
                 <span class="icon"><Icon path={mdiAccessPointOff} /></span>
                 <span>{formatTime(heartbeat.streaming.outputDuration)}</span>
               </button>
             {:else}
-              <button class="button is-danger is-light" on:click={startStream} title="Start Stream">
+              <button
+                class="button is-danger is-light"
+                on:click={startStream}
+                title="Start Stream"
+              >
                 <span class="icon"><Icon path={mdiAccessPoint} /></span>
               </button>
             {/if}
             {#if heartbeat && heartbeat.recording && heartbeat.recording.outputActive}
               {#if heartbeat.recording.outputPaused}
-                <button class="button is-danger" on:click={resumeRecording} title="Resume Recording">
+                <button
+                  class="button is-danger"
+                  on:click={resumeRecording}
+                  title="Resume Recording"
+                >
                   <span class="icon"><Icon path={mdiPlayPause} /></span>
                 </button>
               {:else}
-                <button class="button is-success" on:click={pauseRecording} title="Pause Recording">
+                <button
+                  class="button is-success"
+                  on:click={pauseRecording}
+                  title="Pause Recording"
+                >
                   <span class="icon"><Icon path={mdiPause} /></span>
                 </button>
               {/if}
-              <button class="button is-danger" on:click={stopRecording} title="Stop Recording">
+              <button
+                class="button is-danger"
+                on:click={stopRecording}
+                title="Stop Recording"
+              >
                 <span class="icon"><Icon path={mdiStop} /></span>
                 <span>{formatTime(heartbeat.recording.outputDuration)}</span>
               </button>
             {:else}
-              <button class="button is-danger is-light" on:click={startRecording} title="Start Recording">
+              <button
+                class="button is-danger is-light"
+                on:click={startRecording}
+                title="Start Recording"
+              >
                 <span class="icon"><Icon path={mdiRecord} /></span>
               </button>
             {/if}
             {#if isVirtualCamActive}
-              <button class="button is-danger" on:click={stopVirtualCam} title="Stop Virtual Webcam">
-                <span class='icon'><Icon path={mdiCameraOff} /></span>
+              <button
+                class="button is-danger"
+                on:click={stopVirtualCam}
+                title="Stop Virtual Webcam"
+              >
+                <span class="icon"><Icon path={mdiCameraOff} /></span>
               </button>
             {:else}
-              <button class="button is-danger is-light" on:click={startVirtualCam} title="Start Virtual Webcam">
-                <span class='icon'><Icon path={mdiCamera} /></span>
+              <button
+                class="button is-danger is-light"
+                on:click={startVirtualCam}
+                title="Start Virtual Webcam"
+              >
+                <span class="icon"><Icon path={mdiCamera} /></span>
               </button>
             {/if}
-            <button class:is-light={!isStudioMode} class="button is-link" on:click={toggleStudioMode} title="Toggle Studio Mode">
+            <button
+              class:is-light={!isStudioMode}
+              class="button is-link"
+              on:click={toggleStudioMode}
+              title="Toggle Studio Mode"
+            >
               <span class="icon"><Icon path={mdiBorderVertical} /></span>
             </button>
-            <button class:is-light={!isSceneOnTop} class="button is-link" on:click={switchSceneView} title="Show Scene on Top">
+            <button
+              class:is-light={!isSceneOnTop}
+              class="button is-link"
+              on:click={switchSceneView}
+              title="Show Scene on Top"
+            >
               <span class="icon"><Icon path={mdiArrowSplitHorizontal} /></span>
             </button>
-            <button class:is-light={!editable} class="button is-link" title="Edit Scenes" on:click={() => (editable = !editable)}>
+            <button
+              class:is-light={!editable}
+              class="button is-link"
+              title="Edit Scenes"
+              on:click={() => (editable = !editable)}
+            >
               <span class="icon">
                 <Icon path={editable ? mdiImageEditOutline : mdiImageEdit} />
               </span>
             </button>
-            <button class:is-light={!isIconMode} class="button is-link" title="Show Scenes as Icons" on:click={() => (isIconMode = !isIconMode)}>
+            <button
+              class:is-light={!isIconMode}
+              class="button is-link"
+              title="Show Scenes as Icons"
+              on:click={() => (isIconMode = !isIconMode)}
+            >
               <span class="icon">
-                <Icon path={isIconMode ? mdiSquareRoundedBadgeOutline : mdiSquareRoundedBadge} />
+                <Icon
+                  path={isIconMode
+                    ? mdiSquareRoundedBadgeOutline
+                    : mdiSquareRoundedBadge}
+                />
               </span>
             </button>
-            <button class:is-light={!isReplaying} class:is-danger={replayError} class="button is-link" title="Toggle Replay Buffer" on:click={toggleReplay}>
+            <button
+              class:is-light={!isReplaying}
+              class:is-danger={replayError}
+              class="button is-link"
+              title="Toggle Replay Buffer"
+              on:click={toggleReplay}
+            >
               <span class="icon">
-                <Icon path={isReplaying ? mdiMotionPlayOutline : mdiMotionPlay} />
+                <Icon
+                  path={isReplaying ? mdiMotionPlayOutline : mdiMotionPlay}
+                />
               </span>
               {#if replayError}<span>{replayError}</span>{/if}
             </button>
             <ProfileSelect />
             <SceneCollectionSelect />
-            <button class="button is-danger is-light" on:click={disconnect} title="Disconnect">
+            <button
+              class="button is-danger is-light"
+              on:click={disconnect}
+              title="Disconnect"
+            >
               <span class="icon"><Icon path={mdiConnection} /></span>
             </button>
           {:else}
-            <button class="button is-danger" disabled>{errorMessage || 'Disconnected'}</button>
+            <button class="button is-danger" disabled
+              >{errorMessage || 'Disconnected'}</button
+            >
           {/if}
           <!-- svelte-ignore a11y-missing-attribute -->
-          <button class:is-light={!isFullScreen} class="button is-link" on:click={toggleFullScreen} title="Toggle Fullscreen">
+          <button
+            class:is-light={!isFullScreen}
+            class="button is-link"
+            on:click={toggleFullScreen}
+            title="Toggle Fullscreen"
+          >
             <span class="icon">
               <Icon path={isFullScreen ? mdiFullscreenExit : mdiFullscreen} />
             </span>
@@ -368,15 +494,23 @@
   <div class="container">
     {#if connected}
       {#if isSceneOnTop}
-        <ProgramPreview imageFormat={imageFormat} />
+        <ProgramPreview {imageFormat} />
       {/if}
-      <SceneSwitcher bind:scenes={scenes} buttonStyle={isIconMode ? 'icon' : 'text'} editable={editable} />
+      <SceneSwitcher
+        bind:scenes
+        buttonStyle={isIconMode ? 'icon' : 'text'}
+        {editable}
+      />
       {#if !isSceneOnTop}
-        <ProgramPreview imageFormat={imageFormat} />
+        <ProgramPreview {imageFormat} />
       {/if}
       {#each scenes as scene}
         {#if scene.sceneName.indexOf('(switch)') > 0}
-        <SourceSwitcher name={scene.sceneName} imageFormat={imageFormat} buttonStyle="screenshot" />
+          <SourceSwitcher
+            name={scene.sceneName}
+            {imageFormat}
+            buttonStyle="screenshot"
+          />
         {/if}
       {/each}
     {:else}
@@ -387,7 +521,8 @@
 
       {#if document.location.protocol === 'https:'}
         <div class="notification is-danger">
-          You are checking this page on a secure HTTPS connection. That's great, but it means you can
+          You are checking this page on a secure HTTPS connection. That's great,
+          but it means you can
           <strong>only</strong>
           connect to WSS (secure websocket) addresses, for example OBS exposed with
           <a href="https://ngrok.com/">ngrok</a>
@@ -395,7 +530,11 @@
           <a href="https://pagekite.net/">pagekite</a>
           . If you want to connect to a local OBS instance,
           <strong>
-            <a href="http://{document.location.hostname}{document.location.port ? ':' + document.location.port : ''}{document.location.pathname}">
+            <a
+              href="http://{document.location.hostname}{document.location.port
+                ? ':' + document.location.port
+                : ''}{document.location.pathname}"
+            >
               please click here to load the non-secure version of this page
             </a>
           </strong>
@@ -404,35 +543,47 @@
       {/if}
 
       <form on:submit|preventDefault={connect}>
-        <div class="field">
-          <label class="label">Host:Port</label>
-          <div class="control">
-              <input id="host" bind:value={address} class="input" type="text" autocomplete="" placeholder="ws://localhost:4455" />
-          </div>
-        </div>
-        <div class="field">
-          <label class="label">Password</label>
-          <div class="control">
-              <input id="password" bind:value={password} class="input" type="password" autocomplete="current-password" placeholder="password (leave empty if you have disabled authentication)" />
-          </div>
-        </div>
-        <div class="block"></div>
-        <div class="field">
-          <div class="control">
+        <div class="field is-grouped">
+          <p class="control is-expanded">
+            <input
+              id="host"
+              bind:value={address}
+              class="input"
+              type="text"
+              autocomplete=""
+              placeholder="ws://localhost:4455"
+            />
+            <input
+              id="password"
+              bind:value={password}
+              class="input"
+              type="password"
+              autocomplete="current-password"
+              placeholder="password (leave empty if you have disabled authentication)"
+            />
+          </p>
+          <p class="control">
             <button class="button is-success">Connect</button>
           </div>
         </div>
       </form>
       <div class="block"></div>
       <p class="help">
-        Make sure that you use <a href="https://github.com/obsproject/obs-studio/releases">OBS v28+</a> or install the
-        <a href="https://github.com/obsproject/obs-websocket/releases/tag/{OBS_WEBSOCKET_LATEST_VERSION}" target="_blank">obs-websocket {OBS_WEBSOCKET_LATEST_VERSION} plugin</a>
-        for v27.
-        <br>If you use an older version of OBS, see the <a href="/v4/">archived OBS-web v4</a> page.
+        Make sure that you use <a
+          href="https://github.com/obsproject/obs-studio/releases">OBS v28+</a
+        >
+        or install the
+        <a
+          href="https://github.com/obsproject/obs-websocket/releases/tag/{OBS_WEBSOCKET_LATEST_VERSION}"
+          target="_blank"
+          rel="noreferrer"
+          >obs-websocket {OBS_WEBSOCKET_LATEST_VERSION} plugin</a
+        >
+        for v27. If you use an older version of OBS, see the
+        <a href="/v4/">archived OBS-web v4</a> page.
       </p>
     {/if}
   </div>
-
 </section>
 
 <footer class="footer">
