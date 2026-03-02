@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-static'
+import adapter from '@sveltejs/adapter-node'
 import { sveltekit } from '@sveltejs/kit/vite'
 import preprocess from 'svelte-preprocess'
 import purgecssImport from '@fullhuman/postcss-purgecss'
@@ -9,11 +9,7 @@ const config = {
     scss: {}
   }),
   kit: {
-    adapter: adapter({
-      pages: 'public',
-      assets: 'public',
-      fallback: 'index.html'
-    }),
+    adapter: adapter(),
     output: {
       bundleStrategy: 'single'
     }

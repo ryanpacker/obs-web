@@ -5,13 +5,18 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite dev --host --port 8080",
-    "start": "vite preview --host --port 8080",
+    "start": "node build",
     "lint": "eslint . --ext .js,.ts,.svelte,.html --fix"
+  },
+  "dependencies": {
+    "@workos-inc/node": "^7.36.0",
+    "convex": "^1.21.0",
+    "jose": "^6.0.11"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^7.0.2",
     "@mdi/js": "^7.4.47",
-    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/adapter-node": "^5.2.12",
     "@sveltejs/kit": "^2.53.0",
     "bulma": "^1.0.4",
     "compare-versions": "^6.1.1",
