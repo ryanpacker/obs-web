@@ -129,16 +129,17 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: .5rem;
-    margin-bottom: 2rem;
+    gap: .4rem;
+    margin-bottom: 1.5rem;
+    padding: 0;
   }
   ol.column {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
   }
   li {
     display: inline-block;
-    min-width: 10rem;
+    min-width: 8rem;
     flex-grow: 1;
   }
   ol.with-icon {
@@ -148,5 +149,27 @@
     min-width: 0;
     flex-grow: 0;
     flex-shrink: 1;
+  }
+
+  /* Dark theme for edit mode inputs */
+  li :global(.input) {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #d0d4e0;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+  }
+  li :global(.input:focus) {
+    outline: none;
+    border-color: #DFBC0C;
+    box-shadow: none;
+  }
+  li :global(.label) {
+    color: #999;
+    font-size: 0.75rem;
+    font-weight: 400;
+    font-family: 'Libre Baskerville', Georgia, serif;
   }
 </style>

@@ -101,12 +101,12 @@
 
 <div class="columns is-centered is-vcentered has-text-centered">
   {#if isStudioMode}
-    <div class="column">
-      <img bind:this={preview} class="has-background-dark" alt="Preview" />
-    </div>
+    <div class="column"><div class="stream-frame">
+      <img bind:this={preview} alt="Preview" />
+    </div></div>
     <div class="column is-narrow">
       {#each transitions as transition}
-      <button class="button is-fullwidth is-info" style="margin-bottom: .5rem;"
+      <button class="transition-btn" style="margin-bottom: .5rem;"
         on:click={async () => {
           await sendCommand('SetCurrentSceneTransition', { transitionName: transition.transitionName })
           await sendCommand('TriggerStudioModeTransition')
@@ -115,7 +115,42 @@
       {/each}
     </div>
   {/if}
-  <div class="column">
+  <div class="column"><div class="stream-frame">
     <img bind:this={program} alt="Program"/>
-  </div>
+  </div></div>
 </div>
+
+<style>
+  .transition-btn {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background: #3a3f50;
+    color: #d0d4e0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .transition-btn:hover {
+    background: #464c60;
+    border-color: rgba(223, 188, 12, 0.3);
+  }
+
+  .transition-btn:active {
+    background: #2e3344;
+  }
+
+  .stream-frame {
+    border-radius: 8px;
+    overflow: hidden;
+    display: inline-block;
+  }
+
+  .stream-frame :global(img) {
+    display: block;
+    max-width: 100%;
+  }
+</style>
