@@ -105,9 +105,26 @@ cat > "$INSTALL_DIR/companion/app/launch" <<LAUNCHEOF
 COMPANION_DIR="$INSTALL_DIR/companion"
 OBS_WEB_DIR="$INSTALL_DIR/obs-web"
 
-# Source nvm if present
-export NVM_DIR="\${NVM_DIR:-\$HOME/.nvm}"
-[ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
+# Fix PATH for dock launches — homebrew and nvm aren't in the default PATH
+export PATH="/opt/homebrew/bin:/usr/local/bin:\$PATH"
+
+# Load nvm if available
+export NVM_DIR="\$HOME/.nvm"
+if [ -s "\$NVM_DIR/nvm.sh" ]; then
+  source "\$NVM_DIR/nvm.sh"
+fi
+
+# Load companion environment
+if [ -f "\$COMPANION_DIR/.env.local" ]; then
+  source "\$COMPANION_DIR/.env.local"
+fi
+
+# Load obs-web environment
+if [ -f "\$OBS_WEB_DIR/.env.local" ]; then
+  set -a
+  source "\$OBS_WEB_DIR/.env.local"
+  set +a
+fi
 
 # Start local obs-web server
 cd "\$OBS_WEB_DIR"
@@ -116,7 +133,7 @@ OBS_WEB_PID=\$!
 
 # Run companion (publishes IP + launches OBS)
 cd "\$COMPANION_DIR"
-./node_modules/.bin/tsx src/index.ts
+./node_modules/.bin/tsx src/launch-obs.ts 2>&1 | logger -t "OBS Launcher"
 
 # Clean up obs-web server when companion exits
 kill \$OBS_WEB_PID 2>/dev/null
