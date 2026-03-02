@@ -131,12 +131,12 @@ cd "\$OBS_WEB_DIR"
 PORT=8080 node build &
 OBS_WEB_PID=\$!
 
-# Run companion (publishes IP + launches OBS)
+# Run companion (publishes IP + launches OBS, then exits)
 cd "\$COMPANION_DIR"
 ./node_modules/.bin/tsx src/launch-obs.ts 2>&1 | logger -t "OBS Launcher"
 
-# Clean up obs-web server when companion exits
-kill \$OBS_WEB_PID 2>/dev/null
+# Keep obs-web server running until it exits on its own
+wait \$OBS_WEB_PID
 LAUNCHEOF
 chmod +x "$INSTALL_DIR/companion/app/launch"
 
