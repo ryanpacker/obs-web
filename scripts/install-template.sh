@@ -131,7 +131,7 @@ cd "$INSTALL_DIR/companion"
 bash app/build-app.sh
 
 # ─── Copy to Desktop ────────────────────────────────────────────────────
-LAUNCHER_APP="$INSTALL_DIR/companion/OBS Launcher.app"
+LAUNCHER_APP="$INSTALL_DIR/companion/app/OBS Launcher.app"
 DESKTOP_APP="$HOME/Desktop/OBS Launcher.app"
 
 if [ -d "$LAUNCHER_APP" ]; then
