@@ -6,6 +6,15 @@
   let showUserMenu = false
   let downloadState = 'idle' // idle | downloading | complete | error
   let errorText = ''
+  let copied = false
+
+  const installCommand = 'cd ~/Downloads/obs-web-installer && bash install.sh'
+
+  async function copyCommand () {
+    await navigator.clipboard.writeText(installCommand)
+    copied = true
+    setTimeout(() => { copied = false }, 2000)
+  }
 
   $: userName = data.user?.name || ''
   $: userEmail = data.user?.email || ''
@@ -141,7 +150,16 @@
         <ol class="steps-list">
           <li>Open the downloaded <strong>obs-web-installer.zip</strong> to extract it</li>
           <li>Open <strong>Terminal</strong> and run:
-            <code class="command">cd ~/Downloads/obs-web-installer && bash install.sh</code>
+            <div class="command-wrapper">
+              <code class="command">{installCommand}</code>
+              <button class="copy-btn" on:click={copyCommand} title="Copy to clipboard">
+                {#if copied}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                {:else}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                {/if}
+              </button>
+            </div>
           </li>
           <li>Follow the prompts (it will install Node.js if needed)</li>
           <li>Find <strong>OBS Launcher</strong> on your Desktop and double-click to start</li>
@@ -412,16 +430,38 @@
     color: #f0f0f0;
   }
 
-  .command {
-    display: block;
+  .command-wrapper {
+    display: flex;
+    align-items: center;
     margin-top: 0.4rem;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
+  }
+
+  .command {
+    flex: 1;
     font-family: 'SF Mono', 'Menlo', monospace;
     font-size: 0.75rem;
     color: #DFBC0C;
     word-break: break-all;
+  }
+
+  .copy-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: #777;
+    cursor: pointer;
+    padding: 0.15rem;
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+  }
+
+  .copy-btn:hover {
+    color: #DFBC0C;
   }
 </style>
