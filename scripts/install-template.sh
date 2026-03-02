@@ -126,17 +126,38 @@ if [ -f "\$OBS_WEB_DIR/.env.local" ]; then
   set +a
 fi
 
-# Start local obs-web server
-cd "\$OBS_WEB_DIR"
-PORT=8080 node build &
-OBS_WEB_PID=\$!
+# Check if obs-web server is already running on port 8080
+EXISTING_PID=\$(lsof -ti tcp:8080 2>/dev/null)
+SERVER_RUNNING=false
+
+if [ -n "\$EXISTING_PID" ]; then
+  # Check if it's healthy by hitting the server
+  if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "^[23]"; then
+    echo "obs-web server already running on port 8080 (pid \$EXISTING_PID), reusing" | logger -t "OBS Launcher"
+    SERVER_RUNNING=true
+    OBS_WEB_PID=\$EXISTING_PID
+  else
+    # Something else on 8080 or server is unhealthy — kill it and start fresh
+    kill \$EXISTING_PID 2>/dev/null
+    sleep 1
+  fi
+fi
+
+if [ "\$SERVER_RUNNING" = false ]; then
+  cd "\$OBS_WEB_DIR"
+  PORT=8080 node build &
+  OBS_WEB_PID=\$!
+fi
 
 # Run companion (publishes IP + launches OBS, then exits)
 cd "\$COMPANION_DIR"
 ./node_modules/.bin/tsx src/launch-obs.ts 2>&1 | logger -t "OBS Launcher"
 
 # Keep obs-web server running until it exits on its own
-wait \$OBS_WEB_PID
+# (only if we started it — skip if reusing existing)
+if [ "\$SERVER_RUNNING" = false ]; then
+  wait \$OBS_WEB_PID
+fi
 LAUNCHEOF
 chmod +x "$INSTALL_DIR/companion/app/launch"
 
