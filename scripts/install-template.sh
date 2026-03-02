@@ -100,27 +100,26 @@ DISABLE_AUTH=true
 ENVEOF
 
 # ─── Patch companion launch script to also start obs-web ────────────────
-cat > "$INSTALL_DIR/companion/app/launch" <<'LAUNCHEOF'
+cat > "$INSTALL_DIR/companion/app/launch" <<LAUNCHEOF
 #!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-COMPANION_DIR="$(dirname "$SCRIPT_DIR")"
-OBS_WEB_DIR="$(dirname "$COMPANION_DIR")/obs-web"
+COMPANION_DIR="$INSTALL_DIR/companion"
+OBS_WEB_DIR="$INSTALL_DIR/obs-web"
 
 # Source nvm if present
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+export NVM_DIR="\${NVM_DIR:-\$HOME/.nvm}"
+[ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
 
 # Start local obs-web server
-cd "$OBS_WEB_DIR"
+cd "\$OBS_WEB_DIR"
 PORT=8080 node build &
-OBS_WEB_PID=$!
+OBS_WEB_PID=\$!
 
 # Run companion (publishes IP + launches OBS)
-cd "$COMPANION_DIR"
-npx tsx src/index.ts
+cd "\$COMPANION_DIR"
+./node_modules/.bin/tsx src/index.ts
 
 # Clean up obs-web server when companion exits
-kill $OBS_WEB_PID 2>/dev/null
+kill \$OBS_WEB_PID 2>/dev/null
 LAUNCHEOF
 chmod +x "$INSTALL_DIR/companion/app/launch"
 

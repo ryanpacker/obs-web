@@ -36,7 +36,7 @@ mkdir -p "$BUNDLE_DIR"
 
 # ─── Stage obs-web ──────────────────────────────────────────────────────
 echo "Staging obs-web files..."
-cp -R "$REPO_DIR/build" "$INSTALLER_DIR/obs-web/build"
+rsync -a --exclude='*.map' --exclude='*.zip' "$REPO_DIR/build/" "$INSTALLER_DIR/obs-web/build/"
 cp "$REPO_DIR/package.json" "$INSTALLER_DIR/obs-web/package.json"
 cp "$REPO_DIR/package-lock.json" "$INSTALLER_DIR/obs-web/package-lock.json"
 
