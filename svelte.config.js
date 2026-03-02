@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-node'
+import adapter from '@sveltejs/adapter-vercel'
 import { sveltekit } from '@sveltejs/kit/vite'
 import preprocess from 'svelte-preprocess'
 import purgecssImport from '@fullhuman/postcss-purgecss'
