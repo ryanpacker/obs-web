@@ -1,4 +1,7 @@
-import adapter from '@sveltejs/adapter-vercel'
+import adapterVercel from '@sveltejs/adapter-vercel'
+import adapterNode from '@sveltejs/adapter-node'
+
+const adapter = process.env.BUILD_ADAPTER === 'node' ? adapterNode : adapterVercel
 import { sveltekit } from '@sveltejs/kit/vite'
 import preprocess from 'svelte-preprocess'
 import purgecssImport from '@fullhuman/postcss-purgecss'

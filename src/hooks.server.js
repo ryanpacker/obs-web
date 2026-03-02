@@ -1,7 +1,12 @@
 import { redirect } from '@sveltejs/kit'
+import { env } from '$env/dynamic/private'
 import { verifySession } from '$lib/auth.js'
 
 export async function handle ({ event, resolve }) {
+  if (env.DISABLE_AUTH === 'true') {
+    return resolve(event)
+  }
+
   if (event.url.pathname.startsWith('/auth/')) {
     return resolve(event)
   }

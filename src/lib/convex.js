@@ -7,3 +7,7 @@ export async function getHostIp () {
   const result = await client.query('obsHost:getHost')
   return result?.ipAddress || null
 }
+
+export async function getHostConfig () {
+  return await client.query('obsHost:getHost')
+}

@@ -6,7 +6,8 @@
     "build": "vite build",
     "dev": "vite dev --host --port 8080",
     "start": "node build",
-    "lint": "eslint . --ext .js,.ts,.svelte,.html --fix"
+    "lint": "eslint . --ext .js,.ts,.svelte,.html --fix",
+    "build:bundle": "bash scripts/build-bundle.sh"
   },
   "dependencies": {
     "@workos-inc/node": "^7.36.0",
