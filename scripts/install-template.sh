@@ -6,6 +6,13 @@ set -e
 # Run: cd ~/Downloads/obs-web-installer && bash install.sh
 # ─────────────────────────────────────────────────────────────────────────
 
+# Fix PATH — homebrew and manually installed node may not be in PATH
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# Load nvm if available
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
 INSTALL_DIR="$HOME/obs-web-remote"
 CONVEX_URL="https://useful-pika-111.convex.cloud"
 DEFAULT_OBS_PASSWORD="obsremote"
