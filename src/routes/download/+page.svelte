@@ -139,6 +139,10 @@
       </button>
     {/if}
 
+    {#if data.bundleVersion}
+      <p class="version-info">Build {data.bundleVersion.date} ({data.bundleVersion.hash})</p>
+    {/if}
+
     {#if errorText}
       <div class="error-msg">{errorText}</div>
     {/if}
@@ -392,6 +396,15 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* ── Version ── */
+  .version-info {
+    color: #666;
+    font-size: 0.7rem;
+    margin: -0.5rem 0 1rem;
+    text-align: center;
+    letter-spacing: 0.02em;
   }
 
   /* ── Error ── */

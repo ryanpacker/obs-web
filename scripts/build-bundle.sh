@@ -22,6 +22,14 @@ if [ ! -d "$COMPANION_DIR" ]; then
   exit 1
 fi
 
+# ─── Write version info (before build so Vite can import it) ────────────
+mkdir -p "$BUNDLE_DIR"
+BUILD_DATE=$(date -u +%Y-%m-%d)
+BUILD_HASH=$(cd "$REPO_DIR" && git rev-parse --short HEAD)
+VERSION_JSON="{\"date\":\"$BUILD_DATE\",\"hash\":\"$BUILD_HASH\"}"
+echo "$VERSION_JSON" > "$BUNDLE_DIR/version.json"
+echo "Version: $BUILD_DATE ($BUILD_HASH)"
+
 # ─── Build obs-web with Node adapter ────────────────────────────────────
 echo ""
 echo "Building obs-web with Node adapter..."
@@ -32,7 +40,6 @@ BUILD_ADAPTER=node npm run build
 rm -rf "$STAGING_DIR"
 mkdir -p "$INSTALLER_DIR/obs-web"
 mkdir -p "$INSTALLER_DIR/companion"
-mkdir -p "$BUNDLE_DIR"
 
 # ─── Stage obs-web ──────────────────────────────────────────────────────
 echo "Staging obs-web files..."
