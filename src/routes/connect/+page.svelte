@@ -1,6 +1,7 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
   import { goto } from '$app/navigation'
+  import { browser } from '$app/environment'
   import {
     mdiCellphone,
     mdiTelevisionClassic
@@ -18,8 +19,23 @@
 
   export let data
 
+  const LOCAL_PORT = 8080
+  const STALE_MINUTES = 30
+
   // Redirect to main page once connected
   $: if ($connected) goto('/')
+
+  // Host info from Convex (for HTTPS redirect)
+  $: host = data.host
+  $: ipAddress = host?.ipAddress
+  $: interfaceName = host?.interfaceName || ''
+  $: updatedAt = host?.updatedAt
+  $: isRecent = updatedAt && (Date.now() - updatedAt) < STALE_MINUTES * 60 * 1000
+  $: localUrl = ipAddress ? `http://${ipAddress}:${LOCAL_PORT}/connect` : null
+
+  // Are we on HTTPS? If so, we need to redirect to the local HTTP server.
+  let isSecure = false
+  let redirecting = false
 
   // Avatar state
   let showUserMenu = false
@@ -32,11 +48,22 @@
     : userEmail
       ? userEmail[0].toUpperCase()
       : '?'
-  $: statusText = $autoConnecting
-    ? 'Searching for OBS...'
-    : $errorMessage
-      ? ''
-      : 'Ready to connect'
+  $: statusText = redirecting
+    ? ''
+    : $autoConnecting
+      ? 'Searching for OBS...'
+      : $errorMessage
+        ? ''
+        : 'Ready to connect'
+
+  function formatTimeAgo (ts) {
+    const seconds = Math.floor((Date.now() - ts) / 1000)
+    if (seconds < 60) return 'just now'
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    return `${hours}h ago`
+  }
 
   function toggleUserMenu () {
     showUserMenu = !showUserMenu
@@ -59,7 +86,20 @@
   onMount(async () => {
     document.addEventListener('click', handleClickOutside, true)
 
-    // Auto-connect via Convex
+    isSecure = location.protocol === 'https:'
+
+    if (isSecure) {
+      // On HTTPS (e.g. Vercel): redirect to local HTTP server
+      if (localUrl && isRecent) {
+        redirecting = true
+        setTimeout(() => {
+          window.location.href = localUrl
+        }, 1500)
+      }
+      return
+    }
+
+    // On HTTP (local server): auto-connect directly via WebSocket
     autoConnecting.set(true)
     try {
       const hostIp = await getHostIp()
@@ -123,75 +163,121 @@
     </div>
   {/if}
 
-  <h1 class="connect-title">Broadcast Controller</h1>
-
-  <!-- Vertical connection visual -->
-  <div class="connect-visual">
-    <div class="endpoint-card">
-      <div class="endpoint-icon">
-        <Icon path={mdiCellphone} size="3rem" />
+  {#if isSecure}
+    <!-- HTTPS path: redirect to local HTTP server -->
+    {#if redirecting}
+      <div class="status-card">
+        <div class="spinner"></div>
+        <h2>Connecting to local OBS</h2>
+        <p class="subtitle">Redirecting to <strong>{localUrl}</strong></p>
+        <p class="detail">{interfaceName} &middot; last seen {formatTimeAgo(updatedAt)}</p>
       </div>
-    </div>
-    <span class="endpoint-label">Controller</span>
 
-    <div class="signal-bridge">
-      <div class="signal-track"></div>
-      <div class="signal-dot dot-1"></div>
-      <div class="signal-dot dot-2"></div>
-      <div class="signal-dot dot-3"></div>
-    </div>
-
-    <div class="endpoint-card">
-      <div class="endpoint-icon">
-        <Icon path={mdiTelevisionClassic} size="3rem" />
+    {:else if localUrl && isRecent}
+      <div class="status-card">
+        <div class="dot dot-ok"></div>
+        <h2>OBS Broadcast Computer Found</h2>
+        <p class="subtitle">{interfaceName}</p>
+        <p class="detail">Last seen {formatTimeAgo(updatedAt)}</p>
+        <a href={localUrl} class="action-btn">Connect to local OBS</a>
       </div>
-    </div>
-    <span class="endpoint-label">OBS Studio</span>
-  </div>
 
-  {#if statusText}
-    <p class="connect-status">{statusText}</p>
-  {/if}
-
-  {#if $errorMessage}
-    <div class="connect-error">{$errorMessage}</div>
-  {/if}
-
-  <button class="connect-button" on:click={handleConnect}>Connect</button>
-
-  <button class="details-toggle" on:click={toggleDetails}>
-    Connection Details {showDetails ? '\u25B4' : '\u25BE'}
-  </button>
-
-  {#if showDetails}
-    <div class="details-form">
-      <div class="details-field">
-        <label for="host" class="details-label">Host</label>
-        <input
-          id="host"
-          bind:value={$address}
-          class="details-input"
-          type="text"
-          placeholder="ws://localhost:4455"
-        />
+    {:else if localUrl && !isRecent}
+      <div class="status-card">
+        <div class="dot dot-stale"></div>
+        <h2>OBS Broadcast Computer Offline</h2>
+        <p class="subtitle">Last known address: <strong>{ipAddress}</strong></p>
+        <p class="detail">{interfaceName} &middot; last seen {formatTimeAgo(updatedAt)}</p>
+        <p class="message">
+          OBS hasn't checked in for over {STALE_MINUTES} minutes.
+          Make sure OBS Launcher is running on the broadcast computer.
+        </p>
+        <a href={localUrl} class="action-btn secondary">Try connecting anyway</a>
       </div>
-      <div class="details-field">
-        <label for="password" class="details-label">Password</label>
-        <input
-          id="password"
-          bind:value={$password}
-          class="details-input"
-          type="password"
-          autocomplete="current-password"
-          placeholder="Enter password"
-        />
+
+    {:else}
+      <div class="status-card">
+        <div class="dot dot-error"></div>
+        <h2>No OBS Broadcast Computer Found</h2>
+        <p class="message">
+          OBS Launcher hasn't published a host address yet.
+          Make sure OBS Launcher is running on the broadcast computer.
+        </p>
       </div>
+    {/if}
+
+  {:else}
+    <!-- HTTP path: direct WebSocket connection -->
+    <h1 class="connect-title">Broadcast Controller</h1>
+
+    <!-- Vertical connection visual -->
+    <div class="connect-visual">
+      <div class="endpoint-card">
+        <div class="endpoint-icon">
+          <Icon path={mdiCellphone} size="3rem" />
+        </div>
+      </div>
+      <span class="endpoint-label">Controller</span>
+
+      <div class="signal-bridge">
+        <div class="signal-track"></div>
+        <div class="signal-dot dot-1"></div>
+        <div class="signal-dot dot-2"></div>
+        <div class="signal-dot dot-3"></div>
+      </div>
+
+      <div class="endpoint-card">
+        <div class="endpoint-icon">
+          <Icon path={mdiTelevisionClassic} size="3rem" />
+        </div>
+      </div>
+      <span class="endpoint-label">OBS Studio</span>
     </div>
+
+    {#if statusText}
+      <p class="connect-status">{statusText}</p>
+    {/if}
+
+    {#if $errorMessage}
+      <div class="connect-error">{$errorMessage}</div>
+    {/if}
+
+    <button class="action-btn" on:click={handleConnect}>Connect</button>
+
+    <button class="details-toggle" on:click={toggleDetails}>
+      Connection Details {showDetails ? '\u25B4' : '\u25BE'}
+    </button>
+
+    {#if showDetails}
+      <div class="details-form">
+        <div class="details-field">
+          <label for="host" class="details-label">Host</label>
+          <input
+            id="host"
+            bind:value={$address}
+            class="details-input"
+            type="text"
+            placeholder="ws://localhost:4455"
+          />
+        </div>
+        <div class="details-field">
+          <label for="password" class="details-label">Password</label>
+          <input
+            id="password"
+            bind:value={$password}
+            class="details-input"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter password"
+          />
+        </div>
+      </div>
+    {/if}
   {/if}
 </div>
 
 <style>
-  /* ── Page ── */
+  /* -- Page -- */
   .connect-page {
     min-height: 100vh;
     display: flex;
@@ -204,7 +290,7 @@
     font-family: 'Libre Baskerville', Georgia, serif;
   }
 
-  /* ── Avatar ── */
+  /* -- Avatar -- */
   .avatar-wrapper {
     position: absolute;
     top: 1.25rem;
@@ -274,7 +360,81 @@
     text-decoration: underline;
   }
 
-  /* ── Title ── */
+  /* -- HTTPS redirect status cards -- */
+  .status-card {
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 auto 1.25rem;
+  }
+
+  .dot-ok {
+    background: #48c774;
+    box-shadow: 0 0 10px rgba(72, 199, 116, 0.4);
+  }
+
+  .dot-stale {
+    background: #DFBC0C;
+    box-shadow: 0 0 10px rgba(223, 188, 12, 0.4);
+  }
+
+  .dot-error {
+    background: #f14668;
+    box-shadow: 0 0 10px rgba(241, 70, 104, 0.4);
+  }
+
+  .subtitle {
+    color: #bbb;
+    font-size: 0.9rem;
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle strong {
+    color: #d0d4e0;
+  }
+
+  .detail {
+    color: #777;
+    font-size: 0.75rem;
+    margin: 0 0 1.5rem;
+  }
+
+  .message {
+    color: #999;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0 0 1.5rem;
+  }
+
+  /* -- Spinner -- */
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #DFBC0C;
+    border-radius: 50%;
+    margin: 0 auto 1.25rem;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* -- Title -- */
+  h2 {
+    color: #f0f0f0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
   .connect-title {
     color: #f0f0f0;
     font-size: 2rem;
@@ -283,7 +443,7 @@
     letter-spacing: 0.01em;
   }
 
-  /* ── Vertical Connection Visual ── */
+  /* -- Vertical Connection Visual -- */
   .connect-visual {
     display: flex;
     flex-direction: column;
@@ -316,7 +476,7 @@
     letter-spacing: 0.04em;
   }
 
-  /* ── Signal Bridge (vertical) ── */
+  /* -- Signal Bridge (vertical) -- */
   .signal-bridge {
     position: relative;
     width: 4px;
@@ -373,7 +533,7 @@
     }
   }
 
-  /* ── Status & Error ── */
+  /* -- Status & Error -- */
   .connect-status {
     color: #999;
     font-size: 0.9rem;
@@ -394,8 +554,9 @@
     box-sizing: border-box;
   }
 
-  /* ── Connect Button ── */
-  .connect-button {
+  /* -- Action Button (shared by both paths) -- */
+  .action-btn {
+    display: inline-block;
     width: 100%;
     max-width: 320px;
     padding: 0.85rem;
@@ -410,17 +571,30 @@
     margin-bottom: 1.5rem;
     transition: background 0.2s, transform 0.1s;
     box-sizing: border-box;
+    text-align: center;
+    text-decoration: none;
   }
 
-  .connect-button:hover {
+  .action-btn:hover {
     background: #c9a90b;
   }
 
-  .connect-button:active {
+  .action-btn:active {
     transform: scale(0.98);
   }
 
-  /* ── Connection Details ── */
+  .action-btn.secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: #999;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #d0d4e0;
+  }
+
+  /* -- Connection Details -- */
   .details-toggle {
     background: none;
     border: none;
