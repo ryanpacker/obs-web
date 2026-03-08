@@ -336,7 +336,7 @@
 
       <div class="status-pill desktop-only">
         {#if heartbeat && heartbeat.stats}
-          {Math.round(heartbeat.stats.activeFps)} fps &middot; {Math.round(heartbeat.stats.cpuUsage)}% CPU &middot; {heartbeat.stats.renderSkippedFrames} skipped
+          {Math.round(heartbeat.stats.activeFps)} fps &middot; <span class="cpu-value">{Math.round(heartbeat.stats.cpuUsage)}%</span> CPU &middot; {heartbeat.stats.renderSkippedFrames} skipped
         {:else}Connected{/if}
       </div>
 
@@ -442,7 +442,7 @@
       <div class="mobile-panel">
         <div class="status-pill mobile-status">
           {#if heartbeat && heartbeat.stats}
-            {Math.round(heartbeat.stats.activeFps)} fps &middot; {Math.round(heartbeat.stats.cpuUsage)}% CPU &middot; {heartbeat.stats.renderSkippedFrames} skipped
+            {Math.round(heartbeat.stats.activeFps)} fps &middot; <span class="cpu-value">{Math.round(heartbeat.stats.cpuUsage)}%</span> CPU &middot; {heartbeat.stats.renderSkippedFrames} skipped
           {:else}Connected{/if}
         </div>
 
@@ -629,6 +629,13 @@
     white-space: nowrap;
     letter-spacing: 0.02em;
     flex-shrink: 0;
+  }
+
+  .cpu-value {
+    display: inline-block;
+    min-width: 2.5em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
   }
 
   /* ── Desktop inline controls ── */

@@ -90,13 +90,8 @@
   }
 
   button.pending .fill-bar {
-    animation: fill-progress 1.8s ease-out forwards;
-  }
-
-  @keyframes fill-progress {
-    0%   { transform: scaleX(0); }
-    70%  { transform: scaleX(0.85); }
-    100% { transform: scaleX(0.92); }
+    transform: scaleX(0.92);
+    transition: transform 2s ease-out;
   }
 
   /* ── Text label (above fill bar) ── */
@@ -114,8 +109,8 @@
   }
 
   button.preview .fill-bar {
-    animation: none;
-    transform: none;
+    transform: scaleX(1);
+    transition: transform 180ms ease-out;
     background: rgba(0, 209, 178, 0.12);
   }
 
@@ -127,8 +122,8 @@
   }
 
   button.program .fill-bar {
-    animation: none;
-    transform: none;
+    transform: scaleX(1);
+    transition: transform 150ms ease-out;
     background: rgba(223, 188, 12, 0.12);
   }
 
