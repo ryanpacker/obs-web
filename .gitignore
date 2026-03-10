@@ -4,3 +4,6 @@
 .DS_Store
 /public/
 .bundle-staging/
+.env.local
+.vercel/
+build/
