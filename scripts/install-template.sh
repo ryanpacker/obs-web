@@ -69,6 +69,15 @@ echo "Setting up $INSTALL_DIR ..."
 
 if [ -d "$INSTALL_DIR" ]; then
   echo "Existing installation found. Updating..."
+  # Kill any running obs-web server before overwriting its files. Otherwise
+  # the old process keeps serving its in-memory code from the now-deleted
+  # build/ directory, masking the new install.
+  EXISTING_8080_PID=$(lsof -ti tcp:8080 2>/dev/null || true)
+  if [ -n "$EXISTING_8080_PID" ]; then
+    echo "Stopping obs-web server on port 8080 (pid $EXISTING_8080_PID)..."
+    kill "$EXISTING_8080_PID" 2>/dev/null || true
+    sleep 1
+  fi
   rm -rf "$INSTALL_DIR/obs-web" "$INSTALL_DIR/companion"
 else
   mkdir -p "$INSTALL_DIR"
@@ -112,6 +121,17 @@ cat > "$INSTALL_DIR/companion/app/launch" <<LAUNCHEOF
 #!/bin/bash
 COMPANION_DIR="$INSTALL_DIR/companion"
 OBS_WEB_DIR="$INSTALL_DIR/obs-web"
+
+# ─── Re-exec as native arch if launched under Rosetta ───────────────────
+# Defends against stale LaunchServices preferences that can override
+# LSRequiresNativeExecution=true (per-app "Open using Rosetta" cache survives
+# .app reinstalls because it's keyed by bundle ID).
+if [ "\${OBS_LAUNCHER_NATIVE_REEXEC:-}" != "1" ] \\
+   && [ "\$(/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" = "1" ] \\
+   && [ "\$(/usr/bin/arch)" != "arm64" ]; then
+  export OBS_LAUNCHER_NATIVE_REEXEC=1
+  exec /usr/bin/arch -arm64 /bin/bash "\$0" "\$@"
+fi
 
 # ─── Persistent logging ─────────────────────────────────────────────────
 LOG_DIR="\$HOME/Library/Logs/OBSLauncher"
