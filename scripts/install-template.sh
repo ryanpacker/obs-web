@@ -218,7 +218,7 @@ EXISTING_PID=\$(lsof -ti tcp:8080 2>/dev/null)
 SERVER_RUNNING=false
 
 if [ -n "\$EXISTING_PID" ]; then
-  if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "^[23]"; then
+  if curl -m 3 -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "^[23]"; then
     log "obs-web server already running on port 8080 (pid \$EXISTING_PID), reusing"
     SERVER_RUNNING=true
   else
