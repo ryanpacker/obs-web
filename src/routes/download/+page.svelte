@@ -117,7 +117,7 @@
     <div class="section">
       <h2 class="section-title">Requirements</h2>
       <ul class="req-list">
-        <li>macOS (Apple Silicon or Intel)</li>
+        <li>macOS on Apple Silicon</li>
         <li>OBS Studio installed</li>
       </ul>
     </div>

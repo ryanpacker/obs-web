@@ -25,11 +25,12 @@ echo ""
 
 # ─── Detect architecture ────────────────────────────────────────────────
 ARCH=$(uname -m)
-if [ "$ARCH" = "arm64" ]; then
-  BREW_PREFIX="/opt/homebrew"
-else
-  BREW_PREFIX="/usr/local"
+if [ "$ARCH" != "arm64" ]; then
+  echo "Error: this installer only supports Apple Silicon Macs (arm64)."
+  echo "Detected architecture: $ARCH"
+  exit 1
 fi
+BREW_PREFIX="/opt/homebrew"
 
 # ─── Check for Homebrew ─────────────────────────────────────────────────
 echo "Checking for Homebrew..."
