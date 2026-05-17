@@ -112,59 +112,127 @@ cat > "$INSTALL_DIR/companion/app/launch" <<LAUNCHEOF
 COMPANION_DIR="$INSTALL_DIR/companion"
 OBS_WEB_DIR="$INSTALL_DIR/obs-web"
 
-# Fix PATH for dock launches — homebrew and nvm aren't in the default PATH
-export PATH="/opt/homebrew/bin:/usr/local/bin:\$PATH"
+# ─── Persistent logging ─────────────────────────────────────────────────
+LOG_DIR="\$HOME/Library/Logs/OBSLauncher"
+LOG_FILE="\$LOG_DIR/launch.log"
+mkdir -p "\$LOG_DIR" 2>/dev/null
 
-# Load nvm if available
+log() {
+  local ts msg
+  ts="\$(date '+%Y-%m-%d %H:%M:%S')"
+  msg="\$ts \$*"
+  printf '%s\n' "\$msg" >> "\$LOG_FILE"
+  printf '%s\n' "\$msg" | logger -t "OBS Launcher"
+}
+
+# "is set" / "is NOT set" without leaking the value
+var_state() {
+  if [ -n "\${1:-}" ]; then printf "is set"; else printf "is NOT set"; fi
+}
+
+# Native machine arch (independent of how this script was invoked / Rosetta)
+if [ "\$(/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" = "1" ]; then
+  NATIVE_ARCH="arm64"
+else
+  NATIVE_ARCH="x86_64"
+fi
+
+{
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "Invocation: \$(date '+%Y-%m-%d %H:%M:%S')  pid=\$\$  user=\$USER  host=\$(hostname)"
+  echo "Launched from: \${0}"
+  echo "Bash arch: \$(/usr/bin/arch)  Native arch: \${NATIVE_ARCH}"
+  echo "Caller PATH: \${PATH}"
+} >> "\$LOG_FILE"
+
+log "OBS Launcher starting (installed version, bash=\$(/usr/bin/arch), native=\${NATIVE_ARCH})"
+log "COMPANION_DIR=\$COMPANION_DIR"
+log "OBS_WEB_DIR=\$OBS_WEB_DIR"
+
+# ─── Augment PATH for GUI launches ──────────────────────────────────────
+export PATH="/opt/homebrew/bin:/usr/local/bin:\$PATH"
+log "Augmented PATH=\$PATH"
+
 export NVM_DIR="\$HOME/.nvm"
 if [ -s "\$NVM_DIR/nvm.sh" ]; then
   source "\$NVM_DIR/nvm.sh"
+  log "Sourced nvm from \$NVM_DIR/nvm.sh"
+else
+  log "nvm.sh not found at \$NVM_DIR/nvm.sh (continuing — relying on PATH for node)"
 fi
 
-# Load companion environment
+NODE_BIN="\$(command -v node || echo '<not found>')"
+NODE_VER="\$([ "\$NODE_BIN" != "<not found>" ] && arch -"\$NATIVE_ARCH" "\$NODE_BIN" --version || echo '<n/a>')"
+log "node=\$NODE_BIN (\$NODE_VER, forced \${NATIVE_ARCH})"
+
+# ─── Load environment ───────────────────────────────────────────────────
 if [ -f "\$COMPANION_DIR/.env.local" ]; then
+  set -a
   source "\$COMPANION_DIR/.env.local"
+  set +a
+  log "Loaded \$COMPANION_DIR/.env.local (CONVEX_URL \$(var_state "\${CONVEX_URL:-}"))"
+else
+  log "WARNING: \$COMPANION_DIR/.env.local not found"
 fi
 
-# Load obs-web environment
 if [ -f "\$OBS_WEB_DIR/.env.local" ]; then
   set -a
   source "\$OBS_WEB_DIR/.env.local"
   set +a
+  log "Loaded \$OBS_WEB_DIR/.env.local (PUBLIC_CONVEX_URL \$(var_state "\${PUBLIC_CONVEX_URL:-}"), OBS_WS_PASSWORD \$(var_state "\${OBS_WS_PASSWORD:-}"))"
+else
+  log "WARNING: \$OBS_WEB_DIR/.env.local not found"
 fi
 
-# Check if obs-web server is already running on port 8080
+# ─── Sanity-check OBS is installed ──────────────────────────────────────
+if [ -d "/Applications/OBS.app" ]; then
+  log "Found /Applications/OBS.app"
+else
+  log "WARNING: /Applications/OBS.app not found — 'open -a OBS' will fail"
+fi
+
+# ─── Manage obs-web server on port 8080 ─────────────────────────────────
 EXISTING_PID=\$(lsof -ti tcp:8080 2>/dev/null)
 SERVER_RUNNING=false
 
 if [ -n "\$EXISTING_PID" ]; then
-  # Check if it's healthy by hitting the server
   if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "^[23]"; then
-    echo "obs-web server already running on port 8080 (pid \$EXISTING_PID), reusing" | logger -t "OBS Launcher"
+    log "obs-web server already running on port 8080 (pid \$EXISTING_PID), reusing"
     SERVER_RUNNING=true
-    OBS_WEB_PID=\$EXISTING_PID
   else
-    # Something else on 8080 or server is unhealthy — kill it and start fresh
+    log "Something on port 8080 (pid \$EXISTING_PID) is not healthy — killing"
     kill \$EXISTING_PID 2>/dev/null
     sleep 1
   fi
 fi
 
 if [ "\$SERVER_RUNNING" = false ]; then
-  cd "\$OBS_WEB_DIR"
-  PORT=8080 node build &
+  log "Starting obs-web server (PORT=8080 node build) from \$OBS_WEB_DIR — detached, native \${NATIVE_ARCH}"
+  cd "\$OBS_WEB_DIR" || { log "ERROR: failed to cd to \$OBS_WEB_DIR"; exit 1; }
+  # Detach via nohup + disown so the .app's bash can exit cleanly (no zombie that
+  # blocks the next launch with a "not responding" dialog).
+  nohup arch -"\$NATIVE_ARCH" env PORT=8080 node build >> "\$LOG_FILE" 2>&1 &
   OBS_WEB_PID=\$!
+  disown \$OBS_WEB_PID 2>/dev/null
+  log "obs-web server pid=\$OBS_WEB_PID (detached)"
 fi
 
-# Run companion (publishes IP + launches OBS, then exits)
-cd "\$COMPANION_DIR"
-./node_modules/.bin/tsx src/launch-obs.ts 2>&1 | logger -t "OBS Launcher"
+# ─── Run companion (publishes IP + launches OBS, then exits) ────────────
+cd "\$COMPANION_DIR" || { log "ERROR: failed to cd to \$COMPANION_DIR"; exit 1; }
+log "Running: arch -\${NATIVE_ARCH} ./node_modules/.bin/tsx src/launch-obs.ts"
 
-# Keep obs-web server running until it exits on its own
-# (only if we started it — skip if reusing existing)
-if [ "\$SERVER_RUNNING" = false ]; then
-  wait \$OBS_WEB_PID
+arch -"\$NATIVE_ARCH" ./node_modules/.bin/tsx src/launch-obs.ts 2>&1 | tee -a "\$LOG_FILE" | logger -t "OBS Launcher"
+TSX_STATUS=\${PIPESTATUS[0]}
+
+if [ "\$TSX_STATUS" -eq 0 ]; then
+  log "launch-obs.ts exited 0 (success)"
+else
+  log "ERROR: launch-obs.ts exited \$TSX_STATUS"
 fi
+
+log "OBS Launcher finished (server detached, .app exiting)"
+exit "\$TSX_STATUS"
 LAUNCHEOF
 chmod +x "$INSTALL_DIR/companion/app/launch"
 
